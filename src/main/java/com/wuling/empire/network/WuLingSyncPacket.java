@@ -83,6 +83,10 @@ public class WuLingSyncPacket {
 
     public static void handle(WuLingSyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
+        if (!context.getDirection().getReceptionSide().isClient()) {
+            context.setPacketHandled(true);
+            return;
+        }
         context.enqueueWork(() -> ClientWuLingData.set(
                 msg.bound, msg.typeKey, msg.sourceKey, msg.realmOrdinal,
                 msg.stageOrdinal, msg.progress, msg.threshold, msg.cultivationBonus,

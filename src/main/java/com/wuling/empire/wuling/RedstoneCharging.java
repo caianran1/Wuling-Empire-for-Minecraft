@@ -75,8 +75,10 @@ public final class RedstoneCharging {
 
                 player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                         SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.PLAYERS, 0.7F, 1.4F);
+                // 报实入值：池子快满时 gain 会被截断，照 gain 报「充入 100 / 当前 1000」
+                // 跟玩家看到的数字对不上
                 player.sendSystemMessage(Component.translatable("message.wulingdiguo.redstone_charged",
-                        trim(gain), trim(data.redstoneCharge()), trim(max)));
+                        trim(applied), trim(data.redstoneCharge()), trim(max)));
                 if (applied <= 0) {
                     player.sendSystemMessage(Component.translatable("message.wulingdiguo.redstone_full"));
                 }

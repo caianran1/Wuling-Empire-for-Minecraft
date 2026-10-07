@@ -64,6 +64,12 @@ public class WuLingSubmitPacket {
                         Component.translatable(WuLingRealm.byOrdinal(data.capRealm()).translationKey())));
                 return;
             }
+            // 召唤类（腐肉）的突破只看击杀数，不收物资 —— 界面上按钮本来就是隐藏的，
+            // 这里再挡一道，免得改包客户端把材料缴进一个用不上的池子
+            if (data.type() != null && data.type().isSummoner()) {
+                player.sendSystemMessage(Component.translatable("message.wulingdiguo.submit_none"));
+                return;
+            }
 
             int target = data.realmOrdinal() + 1;
             BreakthroughRequirement.Result result =

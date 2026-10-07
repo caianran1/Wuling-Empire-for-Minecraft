@@ -32,6 +32,10 @@ public class RedstoneSyncPacket {
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context ctx = supplier.get();
+        if (!ctx.getDirection().getReceptionSide().isClient()) {
+            ctx.setPacketHandled(true);
+            return;
+        }
         ctx.enqueueWork(() -> com.wuling.empire.client.ClientRedstoneData.set(this.charge, this.max));
         ctx.setPacketHandled(true);
     }

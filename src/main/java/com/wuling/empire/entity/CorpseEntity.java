@@ -77,21 +77,39 @@ public class CorpseEntity extends Entity {
     public static CorpseEntity create(Level level, LivingEntity dead) {
         CorpseEntity corpse = new CorpseEntity(ModEntities.SPIRIT_CORPSE.get(), level);
         corpse.captureAppearance(dead);
-        corpse.setPos(dead.getX(), dead.getY(), dead.getZ());
-        corpse.setDeltaMovement(dead.getDeltaMovement().multiply(0.2D, 0.0D, 0.2D));
         corpse.fillBeads(dead);
 
         // Part 3：末影龙死亡生成专属尸体，掉落一颗极品灵珠（来源=末影龙）
+        // ⚠️ 必须在 setPos / refreshDimensions 之前置位：命中箱大小由 dragon 决定
         if (dead instanceof EnderDragon) {
             corpse.dragon = true;
             corpse.beads.clear();
             corpse.addBead(SpiritBeadDrops.dragonBead());
         }
+
+        corpse.setPos(dead.getX(), dead.getY(), dead.getZ());
+        corpse.setDeltaMovement(dead.getDeltaMovement().multiply(0.2D, 0.0D, 0.2D));
+        // 大命中箱（16×12）要显式刷一次，否则碰撞箱还是构造时的 0.8×0.5，右键很难点中
+        corpse.refreshDimensions();
         return corpse;
     }
 
     public boolean isDragon() {
         return dragon;
+    }
+
+    /**
+     * 客户端收到同步包时置位。
+     *
+     * <p>{@code dragon} 决定渲染（紫色光柱、要不要套原版偏航）与命中箱大小，
+     * 而客户端实体是网络生成的、不读服务端 NBT，所以只能靠包带过来。
+     */
+    public void setDragon(boolean dragon) {
+        this.dragon = dragon;
+        if (dragon) {
+            // 命中箱是从 dimensions 字段算出来的，改完得显式刷一次
+            this.refreshDimensions();
+        }
     }
 
     @Override
@@ -255,7 +273,9 @@ public class CorpseEntity extends Entity {
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.setDeltaMovement(this.getDeltaMovement().multiply(0.75D, 0.98D, 0.75D));
 
-        if (!this.level().isClientSide() && this.life > Config.CORPSE_LIFETIME_TICKS.get()) {
+        // 末影龙尸体不超时销毁：它是「紫色光柱地标」，取完珠子也要一直在那儿
+        if (!this.level().isClientSide() && !this.dragon
+                && this.life > Config.CORPSE_LIFETIME_TICKS.get()) {
             expire();
         }
     }
@@ -328,7 +348,8 @@ public class CorpseEntity extends Entity {
         }
         this.life = tag.getInt(KEY_LIFE);
         this.visualYaw = tag.getFloat(KEY_YAW);
-        this.dragon = tag.getBoolean(KEY_DRAGON);
+        // 走 setDragon：区块重载读回来时也要把大命中箱一起刷出来
+        this.setDragon(tag.getBoolean(KEY_DRAGON));
     }
 
     @Override

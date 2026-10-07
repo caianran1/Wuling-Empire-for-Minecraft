@@ -354,12 +354,36 @@ public final class BreakthroughRequirement {
             data.clearSubmitted();
             return;
         }
+        // 灵珠（bead|...）：按当初缴进来的来源 + 品质原样奉还
         for (PoolBead bead : poolBeads(data.submittedSnapshot())) {
             ItemStack stack = new ItemStack(ModItems.BEADS.get(bead.quality()).get(), bead.count());
             SpiritBeadItem.setSource(stack, bead.source());
             give(player, stack);
         }
+        // 普通物资（item|...）：池子里不只有灵珠，漏了这段等于把玩家的矿石铁块全吞了
+        refundItems(player, data.submittedSnapshot());
         data.clearSubmitted();
+    }
+
+    /** 退还缴纳池里的普通物资（灵珠由 {@link #poolBeads} 单独走一遍） */
+    private static void refundItems(Player player, Map<String, Integer> pool) {
+        for (Map.Entry<String, Integer> entry : pool.entrySet()) {
+            String key = entry.getKey();
+            int count = entry.getValue() == null ? 0 : entry.getValue();
+            if (count <= 0 || !key.startsWith(PREFIX_ITEM)) {
+                continue;
+            }
+            Item item = resolveItem(key.substring(PREFIX_ITEM.length()));
+            if (item == null) {
+                continue;
+            }
+            int per = Math.max(1, item.getMaxStackSize());
+            while (count > 0) {
+                int take = Math.min(per, count);
+                give(player, new ItemStack(item, take));
+                count -= take;
+            }
+        }
     }
 
     /** 尽量塞进背包主栏，塞不下的掉在脚下 */

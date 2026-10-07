@@ -61,7 +61,9 @@ public class WuLingCondensePacket {
                 if (ACTION_CONDENSE.equals(msg.action)) {
                     WuLingBinding.condense(sender);
                 } else {
-                    WuLingBinding.bind(sender, msg.typeKey, msg.creative);
+                    // ⚠️ creative 是客户端传上来的，不能直接信 ——
+                    // 否则改个包就能跳过绑定器与灵珠，白嫖传说档武灵
+                    WuLingBinding.bind(sender, msg.typeKey, msg.creative && sender.isCreative());
                 }
             }
         });

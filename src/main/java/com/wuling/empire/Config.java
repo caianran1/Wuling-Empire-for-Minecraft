@@ -736,6 +736,8 @@ public final class Config {
         }
         double value = ROTTEN_FLESH_KILL_BASE.get()
                 * Math.pow(ROTTEN_FLESH_KILL_GROWTH.get(), realmOrdinal - 1);
-        return (int) Math.ceil(value);
+        // 向下取整：默认 20 / 50 / 125 / 312 / 781 / 1953（沿用注释与文档口径）。
+        // 用 ceil 会变成 313 / 782 / 1954，每档白多杀一只。
+        return (int) Math.floor(value + 1.0E-6D);
     }
 }

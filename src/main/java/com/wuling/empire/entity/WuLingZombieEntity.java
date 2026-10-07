@@ -242,7 +242,14 @@ public class WuLingZombieEntity extends Zombie {
         if (this.isFlying()) {
             if (this.isEffectiveAi()) {
                 // 飞行 = 忽略地面寻路与重力，自己推自己；客户端不推进位置，
-                // 交给服务端同步，否则两边各算一次会抖动
+                // 交给服务端同步，否则两边各算一次会抖动。
+                //
+                // ⚠️ 战斗时也必须自己推：FollowOwnerGoal 一旦有目标就退出，
+                // 而它才是唯一的速度来源 —— 不管的话飞行随从打架时会原地悬停。
+                LivingEntity target = this.getTarget();
+                if (target != null && target.isAlive()) {
+                    this.flyTowards(target);
+                }
                 this.move(MoverType.SELF, this.getDeltaMovement());
                 this.setDeltaMovement(this.getDeltaMovement().scale(0.91D));
             }

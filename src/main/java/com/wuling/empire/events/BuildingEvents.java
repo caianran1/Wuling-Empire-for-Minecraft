@@ -17,6 +17,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -143,6 +144,19 @@ public final class BuildingEvents {
         Player player = event.getEntity();
         if (player != null) {
             LAST_WARN.remove(player.getUUID());
+        }
+    }
+
+    /**
+     * 世界卸载（退出存档 / 停服）：把这个世界还没落定的倒计时丢掉。
+     *
+     * <p>倒计时本来就是内存态（设计上不持久化）；不丢的话，同一个 JVM 里
+     * 换个存档再进，上个世界的待落方块会按旧坐标在新世界落地。
+     */
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel level) {
+            BuildingSystem.clearPending(level.dimension());
         }
     }
 

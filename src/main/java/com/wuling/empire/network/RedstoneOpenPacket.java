@@ -29,6 +29,11 @@ public class RedstoneOpenPacket {
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context ctx = supplier.get();
+        // 只会 S→C；服务端收到就丢掉，别去开界面（专用服没有客户端类）
+        if (!ctx.getDirection().getReceptionSide().isClient()) {
+            ctx.setPacketHandled(true);
+            return;
+        }
         ctx.enqueueWork(com.wuling.empire.client.WuLingClientBridge::openChargeScreen);
         ctx.setPacketHandled(true);
     }

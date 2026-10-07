@@ -314,8 +314,11 @@ public class WuLingData {
                 progress = threshold;
                 break;
             }
-            // 统一上限：只能升到最高大境界的第一个小境界之前（与灵珠品质无关）
-            if (realmOrdinal >= capRealm()) {
+            // 统一上限：最高大境界仍然能升小境界（前 → 中 → 后），
+            // 只是不能再往上跨大境界 —— 跨界由上面那道 LATE 守卫拦着。
+            // ⚠️ 这里必须是 `>`：写成 `>=` 会把顶档玩家的中 / 后期一起锁死
+            // （把 maxRealm 调到 5 时尤其明显：下界合金永远停在前期）。
+            if (realmOrdinal > capRealm()) {
                 progress = threshold;
                 break;
             }

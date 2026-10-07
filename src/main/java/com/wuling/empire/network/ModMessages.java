@@ -80,7 +80,8 @@ public final class ModMessages {
     /** 玩家开始追踪某个尸体时，把它的外观数据推送过去 */
     public static void sendCorpseDataTo(ServerPlayer player, CorpseEntity corpse) {
         INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                new CorpseDataPacket(corpse.getId(), corpse.getMobData(), corpse.getVisualYaw()));
+                new CorpseDataPacket(corpse.getId(), corpse.getMobData(), corpse.getVisualYaw(),
+                        corpse.isDragon()));
     }
 
     /** 把玩家的武灵数据推送给该玩家的客户端 */    public static void sendWuLingTo(ServerPlayer player) {

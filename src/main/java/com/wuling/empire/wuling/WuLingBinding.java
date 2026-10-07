@@ -384,7 +384,11 @@ public final class WuLingBinding {
                 return;
             }
 
-            Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(new ResourceLocation(enchantId));
+            // enchantId 来自客户端 → 用 tryParse，别让空串 / 非法字符把服务端主线程炸了
+            ResourceLocation enchantKey = ResourceLocation.tryParse(enchantId);
+            Enchantment enchantment = enchantKey == null
+                    ? null
+                    : ForgeRegistries.ENCHANTMENTS.getValue(enchantKey);
             if (enchantment == null) {
                 return;
             }

@@ -152,6 +152,17 @@ public final class BuildingSystem {
     }
 
     /**
+     * 丢弃某个维度的倒计时队列。
+     *
+     * <p>{@link #PENDING} 是纯内存的，且用维度当键 —— 同一 JVM 里换个存档，
+     * 维度名还是 {@code minecraft:overworld}。不主动清就会把上个世界的待落方块
+     * 带到下个世界的同一坐标上去，所以世界卸载时调用这里。
+     */
+    public static void clearPending(ResourceKey<Level> dimension) {
+        PENDING.remove(dimension);
+    }
+
+    /**
      * 方块消失（被挖 / 被炸）时调用：把它自己从台账划掉，
      * 并让它上方那一串「玩家放的」方块重新进入倒计时 —— 这就是持续判定。
      */
@@ -207,6 +218,11 @@ public final class BuildingSystem {
         if (due != null) {
             for (int i = 0; i < due.size(); i++) {
                 BlockPos pos = BlockPos.of(due.getLong(i));
+                // 区块没加载就先留着（读方块状态会把区块强制拉起来）——
+                // 等玩家回到附近、区块加载了再落
+                if (!level.isLoaded(pos)) {
+                    continue;
+                }
                 map.remove(pos.asLong());
                 resolve(level, pos);
             }
@@ -226,6 +242,10 @@ public final class BuildingSystem {
 
     /** 倒计时到点：还悬空就落，已经有支撑（玩家补了方块）就不再管它 */
     private static void resolve(ServerLevel level, BlockPos pos) {
+        // 期间被别的途径（活塞 / 指令 / 其它模组）换成了非玩家放置的方块 → 不再受理
+        if (!BuildingSavedData.get(level).isManaged(pos)) {
+            return;
+        }
         BlockState state = level.getBlockState(pos);
         if (!qualifies(level, pos, state) || !isFree(level, pos.below())) {
             return;
@@ -233,8 +253,16 @@ public final class BuildingSystem {
         drop(level, pos, state);
     }
 
-    /** 真的让它落下去：转成下落方块实体，并把它上方那串也带进队列 */
+    /**
+     * 真的让它落下去：转成下落方块实体，并把它上方那串也带进队列。
+     *
+     * <p>坠落等于「这格已经不是原来那块了」→ 顺手把这一笔从台账划掉。
+     * 不划的话空气格会永远留在 `<存档>/data` 里，只增不减。
+     *
+     * <p>落定后的新位置<b>不再补登记</b>：落下来的方块按自然方块处理，不会再二次坠落。
+     */
     private static void drop(ServerLevel level, BlockPos pos, BlockState state) {
+        BuildingSavedData.get(level).unmanage(pos);
         FallingBlockEntity.fall(level, pos, state);
         scheduleChainUp(level, pos);
     }
