@@ -11,6 +11,8 @@
   "quality.wulingdiguo.you": "优品",
   "quality.wulingdiguo.shang": "上品",
   "quality.wulingdiguo.ji": "极品",
+  "tooltip.wulingdiguo.forged_quality": "§7锻造品质：%1$s",
+  "message.wulingdiguo.quality_forged": "§6锻造出了 %1$s§6 的 %2$s！",
   "hud.wulingdiguo.spirit": "灵力 %1$s / %2$s",
   "tooltip.wulingdiguo.bead_quality": "§7品质：%1$s",
   "tooltip.wulingdiguo.bead_restore": "吸收可回复 %1$s%% 灵力",

@@ -11,6 +11,8 @@
   "quality.wulingdiguo.you": "Superior",
   "quality.wulingdiguo.shang": "Exquisite",
   "quality.wulingdiguo.ji": "Supreme",
+  "tooltip.wulingdiguo.forged_quality": "§7Forged quality: %1$s",
+  "message.wulingdiguo.quality_forged": "§6Forged a %1$s§6 %2$s!",
   "hud.wulingdiguo.spirit": "Spirit %1$s / %2$s",
   "tooltip.wulingdiguo.bead_quality": "§7Quality: %1$s",
   "tooltip.wulingdiguo.bead_restore": "Restores %1$s%% Spirit Power",

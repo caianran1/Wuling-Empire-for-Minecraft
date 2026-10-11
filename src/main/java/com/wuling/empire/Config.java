@@ -238,6 +238,32 @@ public final class Config {
     /** 充能耗尽时的移动速度惩罚比例（0.3 = 移速掉到 70%） */
     public static final ForgeConfigSpec.DoubleValue REDSTONE_EMPTY_SPEED_PENALTY;
 
+    // ===================== 锻造品质（2026-10-11） =====================
+    // 玩家合成武器 / 工具 / 护甲时按自己的武灵境界掷品质。
+    // 「铁匠」不是 NPC，而是<b>持火武灵的玩家本人</b>（用户 2026-10-11 明确）。
+    /** 总开关 */
+    public static final ForgeConfigSpec.BooleanValue SMITH_ENABLED;
+    /**
+     * 每个境界的锻造品质权重，顺序固定为「凡 / 良 / 优 / 上 / 极」。
+     *
+     * <p>火武灵用本表（它自己那一档）；其它武灵的境界先按 {@link #SMITH_FOREIGN_DIVISOR}
+     * 折算，所以「一般人制造的一般都是凡品，少数有高阶的武器」。
+     */
+    public static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> SMITH_WEIGHTS_WOOD;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> SMITH_WEIGHTS_STONE;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> SMITH_WEIGHTS_GOLD;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> SMITH_WEIGHTS_IRON;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> SMITH_WEIGHTS_DIAMOND;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> SMITH_WEIGHTS_NETHERITE;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> SMITH_WEIGHTS_EMERALD;
+    /** 非火武灵的境界折算除数（默认 3：绿宝石期非火武灵按黄金期掷） */
+    public static final ForgeConfigSpec.IntValue SMITH_FOREIGN_DIVISOR;
+    /** 品质加成系数：最终倍率 = 1 + (同材质武灵倍数 - 1) × 系数 */
+    public static final ForgeConfigSpec.DoubleValue SMITH_FACTOR_LIANG;
+    public static final ForgeConfigSpec.DoubleValue SMITH_FACTOR_YOU;
+    public static final ForgeConfigSpec.DoubleValue SMITH_FACTOR_SHANG;
+    public static final ForgeConfigSpec.DoubleValue SMITH_FACTOR_JI;
+
     // ===================== 建筑系统（悬空坠落，2026-10-02） =====================
     /** 是否启用建筑系统 */
     public static final ForgeConfigSpec.BooleanValue BUILDING_ENABLED;
@@ -627,6 +653,49 @@ public final class Config {
 
         BUILDER.pop();
 
+        // ===================== 锻造品质（2026-10-11） =====================
+        BUILDER.push("smith");
+
+        SMITH_ENABLED = BUILDER.comment("是否启用锻造品质：",
+                        "玩家在工作台合成武器 / 工具 / 护甲时，按自己的武灵境界掷一次品质。",
+                        "凡品 = 原版数值（不打标记、不加属性）；良 / 优 / 上 / 极 逐级逼近同材质的武灵凝聚物。",
+                        "「铁匠」不是 NPC，而是持【火】武灵的玩家本人 —— 火武灵按自己的境界掷，",
+                        "其它武灵按境界的 1/foreignDivisor 折算，所以一般人造出来的大多是凡品。")
+                .define("enabled", true);
+
+        // 权重顺序固定：凡 / 良 / 优 / 上 / 极
+        SMITH_WEIGHTS_WOOD = BUILDER.comment("木期的锻造品质权重（凡,良,优,上,极）")
+                .defineList("weightsWood", List.of(88, 10, 2, 0, 0), o -> o instanceof Integer n && n >= 0);
+        SMITH_WEIGHTS_STONE = BUILDER.comment("石期的锻造品质权重（凡,良,优,上,极）")
+                .defineList("weightsStone", List.of(80, 14, 5, 1, 0), o -> o instanceof Integer n && n >= 0);
+        SMITH_WEIGHTS_GOLD = BUILDER.comment("黄金期的锻造品质权重（凡,良,优,上,极）")
+                .defineList("weightsGold", List.of(68, 19, 10, 3, 0), o -> o instanceof Integer n && n >= 0);
+        SMITH_WEIGHTS_IRON = BUILDER.comment("玄铁期的锻造品质权重（凡,良,优,上,极）")
+                .defineList("weightsIron", List.of(54, 22, 16, 7, 1), o -> o instanceof Integer n && n >= 0);
+        SMITH_WEIGHTS_DIAMOND = BUILDER.comment("钻石期的锻造品质权重（凡,良,优,上,极）")
+                .defineList("weightsDiamond", List.of(36, 23, 22, 14, 5), o -> o instanceof Integer n && n >= 0);
+        SMITH_WEIGHTS_NETHERITE = BUILDER.comment("下界合金期的锻造品质权重（凡,良,优,上,极）。",
+                        "默认让上品占最多 —— 对应「合金期基本上锻造出来的都是上品」。")
+                .defineList("weightsNetherite", List.of(12, 16, 24, 30, 18), o -> o instanceof Integer n && n >= 0);
+        SMITH_WEIGHTS_EMERALD = BUILDER.comment("绿宝石期的锻造品质权重（凡,良,优,上,极）")
+                .defineList("weightsEmerald", List.of(3, 8, 17, 36, 36), o -> o instanceof Integer n && n >= 0);
+
+        SMITH_FOREIGN_DIVISOR = BUILDER.comment("非火武灵玩家的境界折算除数。",
+                        "默认 3 —— 绿宝石期的剑武灵，锻造水平只按黄金期算，对应「一般人造的大多凡品」。")
+                .defineInRange("foreignDivisor", 3, 1, 7);
+
+        SMITH_FACTOR_LIANG = BUILDER.comment("良品的加成系数：倍率 = 1 + (同材质武灵倍数 - 1) × 系数")
+                .defineInRange("factorLiang", 0.2D, 0.0D, 1.0D);
+        SMITH_FACTOR_YOU = BUILDER.comment("优品的加成系数")
+                .defineInRange("factorYou", 0.4D, 0.0D, 1.0D);
+        SMITH_FACTOR_SHANG = BUILDER.comment("上品的加成系数")
+                .defineInRange("factorShang", 0.6D, 0.0D, 1.0D);
+        SMITH_FACTOR_JI = BUILDER.comment("极品的加成系数。",
+                        "默认 0.85 —— 极品武器约等于同材质武灵凝聚物的 85%，永远差一截。")
+                .defineInRange("factorJi", 0.85D, 0.0D, 1.0D);
+
+        BUILDER.pop();
+
         BUILDER.pop();
     }
 
@@ -732,6 +801,58 @@ public final class Config {
     /** 第 realmOrdinal 个大境界内，晋升一个小境界所需的累积进度 */
     public static double stageThreshold(int realmOrdinal) {
         return THRESHOLD_BASE.get() * Math.pow(THRESHOLD_GROWTH.get(), Math.max(0, realmOrdinal));
+    }
+
+    /**
+     * 某品质在锻造里的加成系数。
+     *
+     * <p>最终倍率 = {@code 1 + (同材质武灵倍数 - 1) × 本系数}，
+     * 所以凡品恒为 1（= 原版），极品默认 0.85（≈ 同材质武灵产物的 85%）。
+     *
+     * <p>用「1 + (M-1)×k」而不是「M×k」是有原因的：木剑的武灵倍数只有 3，
+     * 乘 0.25 会掉到 0.75 —— 良品反而比原版弱。这个写法保证凡品严格等于原版，
+     * 且各级单调递增。
+     */
+    public static double smithFactor(SpiritQuality quality) {
+        if (quality == null) {
+            return 0.0D;
+        }
+        switch (quality) {
+            case LIANG: return SMITH_FACTOR_LIANG.get();
+            case YOU: return SMITH_FACTOR_YOU.get();
+            case SHANG: return SMITH_FACTOR_SHANG.get();
+            case JI: return SMITH_FACTOR_JI.get();
+            case FAN:
+            default: return 0.0D;
+        }
+    }
+
+    /**
+     * 某个「锻造等级」的五行品质权重（顺序：凡 / 良 / 优 / 上 / 极）。
+     *
+     * <p>写坏的配置（列表为空 / 全 0）不会崩，只会退化成「全凡品」。
+     */
+    public static int[] smithWeights(int level) {
+        List<? extends Integer> raw;
+        // 夹在 0~6（木 ~ 绿宝石）之间；超出的一律按两端处理
+        switch (Math.max(0, Math.min(6, level))) {
+            case 1: raw = SMITH_WEIGHTS_STONE.get(); break;
+            case 2: raw = SMITH_WEIGHTS_GOLD.get(); break;
+            case 3: raw = SMITH_WEIGHTS_IRON.get(); break;
+            case 4: raw = SMITH_WEIGHTS_DIAMOND.get(); break;
+            case 5: raw = SMITH_WEIGHTS_NETHERITE.get(); break;
+            case 6: raw = SMITH_WEIGHTS_EMERALD.get(); break;
+            case 0:
+            default: raw = SMITH_WEIGHTS_WOOD.get(); break;
+        }
+        int[] out = new int[SpiritQuality.values().length];
+        if (raw != null) {
+            for (int i = 0; i < out.length && i < raw.size(); i++) {
+                Integer value = raw.get(i);
+                out[i] = value == null ? 0 : Math.max(0, value);
+            }
+        }
+        return out;
     }
 
     /** 六段突破的中文名，只用于启动日志 */
