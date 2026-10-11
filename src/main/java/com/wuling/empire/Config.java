@@ -691,7 +691,8 @@ public final class Config {
         SMITH_FACTOR_SHANG = BUILDER.comment("上品的加成系数")
                 .defineInRange("factorShang", 0.6D, 0.0D, 1.0D);
         SMITH_FACTOR_JI = BUILDER.comment("极品的加成系数。",
-                        "默认 0.85 —— 极品武器约等于同材质武灵凝聚物的 85%，永远差一截。")
+                        "默认 0.85 —— 极品武器约等于同材质武灵凝聚物的 86%~90%（材质越低比例越高），",
+                        "也就是永远差一截。")
                 .defineInRange("factorJi", 0.85D, 0.0D, 1.0D);
 
         BUILDER.pop();
