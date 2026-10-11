@@ -65,11 +65,9 @@ public final class ClientTickHandler {
 
         boolean shift = isShiftDown(mc);
 
-        if (condense) {
-            if (!shift) {
-                mc.player.sendSystemMessage(
-                        Component.translatable("message.wulingdiguo.condense_need_shift"));
-            } else if (ClientWuLingData.isBound() && ClientWuLingData.type() == WuLingType.BOOK) {
+        // 凝聚只认「Shift + M」，没按 Shift 时静默忽略（2026-10-11 用户要求删掉提醒）
+        if (condense && shift) {
+            if (ClientWuLingData.isBound() && ClientWuLingData.type() == WuLingType.BOOK) {
                 // 书武灵的凝聚物是附魔书，附魔与等级由玩家挑 —— 先开选择界面，
                 // 选中后由界面发包走 WuLingBinding#condenseBook
                 mc.setScreen(new WuLingBookScreen());

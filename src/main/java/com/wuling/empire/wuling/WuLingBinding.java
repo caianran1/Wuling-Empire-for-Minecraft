@@ -260,10 +260,6 @@ public final class WuLingBinding {
             // 护甲武灵一次给整套四件（头 / 胸 / 腿 / 靴），其余种类只有一件。
             java.util.List<ItemStack> items =
                     data.type().manifest(data.realmOrdinal(), data.stageOrdinal());
-            boolean isSet = items.size() > 1;
-            Component setName = Component.translatable("wuling.manifest.name",
-                    Component.translatable(data.realm().translationKey()),
-                    Component.translatable(data.type().translationKey()));
 
             if (cost > 0.0F && spirit != null) {
                 spirit.addSpirit(-cost);
@@ -283,21 +279,7 @@ public final class WuLingBinding {
 
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.PLAYER_LEVELUP, player.getSoundSource(), 0.8F, 1.2F);
-            if (cost > 0.0F) {
-                player.sendSystemMessage(isSet
-                        ? Component.translatable("message.wulingdiguo.condense_success_set",
-                                setName, items.size(), trim(cost),
-                                trim(spirit == null ? 0.0F : spirit.getSpirit()))
-                        : Component.translatable("message.wulingdiguo.condense_success",
-                                items.get(0).getHoverName(), trim(cost),
-                                trim(spirit == null ? 0.0F : spirit.getSpirit())));
-            } else {
-                player.sendSystemMessage(isSet
-                        ? Component.translatable("message.wulingdiguo.condense_success_set_free",
-                                setName, items.size())
-                        : Component.translatable("message.wulingdiguo.condense_success_free",
-                                items.get(0).getHoverName()));
-            }
+            // 凝聚成功不再刷聊天栏（2026-10-11 用户要求）：反馈靠掉落物 + 升级音效 + HUD 灵力条
         });
     }
 
