@@ -290,10 +290,27 @@ public class WuLingData {
     /**
      * 累积修炼进度并处理小境界自动晋升。
      *
+     * <p>入参是「动作基准值」，这里统一乘上本武灵的<b>修炼速度倍率</b>
+     * （灵珠品质只体现在这一下：同样的动作，品质越高攒得越快）。
+     *
      * @return 本次是否发生了小境界晋升（用于给玩家发提示）
      */
     public boolean addProgress(double amount) {
-        if (!bound || amount <= 0.0D) {
+        return addProgressRaw(amount * cultivationBonus);
+    }
+
+    /**
+     * 累积<b>已经算好倍率</b>的修炼进度 —— 不再乘修炼速度倍率。
+     *
+     * <p>给自带品质曲线的来源用：目前只有「灵力已满时吸收灵珠」。
+     * 那条路按<b>珠子</b>的品质给修为（{@link Config#beadAbsorbBonus}），
+     * 跟玩家自己是用什么品质开启的武灵无关；若是走 {@link #addProgress}，
+     * 会再乘一次修炼速度倍率，两条曲线相乘会把极品珠顶到离谱的数值。
+     *
+     * @return 本次是否发生了小境界晋升（用于给玩家发提示）
+     */
+    public boolean addProgressRaw(double effective) {
+        if (!bound || effective <= 0.0D) {
             return false;
         }
         if (isMaxed()) {
@@ -301,8 +318,7 @@ public class WuLingData {
         }
 
         boolean promoted = false;
-        // 灵珠品质只体现在这里：同样的动作，品质越高攒得越快
-        progress += amount * cultivationBonus;
+        progress += effective;
 
         while (true) {
             double threshold = Config.stageThreshold(realmOrdinal);

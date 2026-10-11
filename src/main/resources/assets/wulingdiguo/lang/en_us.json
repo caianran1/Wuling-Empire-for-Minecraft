@@ -142,6 +142,7 @@
   "tooltip.wulingdiguo.bead_cleric": "§7Hold and right-click a cleric villager: random Wu Ling awakening",
   "wuling.panel.cultivation": "§7Cultivation rate: §a x%1$s§7 (cap is the same for everyone)",
   "tooltip.wulingdiguo.bead_cultivation": "§7Cultivation rate: §a x%1$s§7 (quality only speeds it up; cap is the same for all)",
+  "tooltip.wulingdiguo.bead_full_progress": "§7Absorbed at full spirit: converts to §6+%1$s§7 cultivation (higher quality pays more)",
   "item.wulingdiguo.redstone_ingot": "Redstone Ingot",
   "item.wulingdiguo.redstone_helmet": "Redstone Helmet",
   "item.wulingdiguo.redstone_chestplate": "Redstone Chestplate",

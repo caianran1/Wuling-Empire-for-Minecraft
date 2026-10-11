@@ -66,10 +66,24 @@ public final class Config {
      * 灵力已满时，仍然吸收灵珠能换到的<b>少量修炼进度</b>（2026-10-01 用户口径
      * 「在灵力满时吸收灵珠可小幅度增加修为」）。
      *
-     * <p>真正累加的进度 = 该值 × 灵珠品质的修炼倍率，所以极品珠比凡品珠划算。
-     * 设为 0 即关闭（回到「灵力满时吸收只会提示灵力已满」的老行为）。
+     * <p>真正累加的进度 = 该值 × 该灵珠品质的<b>吸珠倍率</b>（见下面的 beadAbsorbBonus*），
+     * 所以极品珠比凡品珠划算得多。设为 0 即关闭（回到「灵力满时吸收只会提示灵力已满」的老行为）。
+     *
+     * <p>⚠️ 2026-10-11 起这条路径<b>不再叠乘</b>修炼速度倍率（cultivationBonus*）：
+     * 玩家自己是用什么品质开启的武灵，与「拿什么珠子喂修为」无关，
+     * 各给一条曲线、分开算，免得两倍曲线相乘把极品珠顶到离谱的数值。
      */
     public static final ForgeConfigSpec.DoubleValue BEAD_FULL_PROGRESS;
+
+    /**
+     * 灵力已满时吸收灵珠能换到的修为，按<b>灵珠品质</b>给的倍率
+     * （凡 / 良 / 优 / 上 / 极）。用户口径（2026-10-11）：「吸收极品灵珠时给的修为可以多一点」。
+     */
+    public static final ForgeConfigSpec.DoubleValue BEAD_ABSORB_BONUS_FAN;
+    public static final ForgeConfigSpec.DoubleValue BEAD_ABSORB_BONUS_LIANG;
+    public static final ForgeConfigSpec.DoubleValue BEAD_ABSORB_BONUS_YOU;
+    public static final ForgeConfigSpec.DoubleValue BEAD_ABSORB_BONUS_SHANG;
+    public static final ForgeConfigSpec.DoubleValue BEAD_ABSORB_BONUS_JI;
 
     // ===================== 灵珠回复量：品质倍率 =====================
     // 最终回复量 = 怪物基准（item/BeadPower 的 BASE 表）× 这里的品质倍率
@@ -258,8 +272,20 @@ public final class Config {
                 .defineInRange("regenPerMinute", 1.0D, 0.0D, 100.0D);
 
         BEAD_FULL_PROGRESS = BUILDER.comment("灵力已满时吸收灵珠得到的少量修炼进度；",
-                        "实际累加 = 该值 × 灵珠品质的修炼倍率。0 = 关闭。")
+                        "实际累加 = 该值 × 该灵珠品质的吸珠倍率（beadAbsorbBonus*）。0 = 关闭。")
                 .defineInRange("beadFullProgress", 3.0D, 0.0D, 10000.0D);
+
+        BEAD_ABSORB_BONUS_FAN = BUILDER.comment("凡品灵珠：灵力已满时吸收换到的修为倍率")
+                .defineInRange("beadAbsorbBonusFan", 1.0D, 0.0D, 1000.0D);
+        BEAD_ABSORB_BONUS_LIANG = BUILDER.comment("良品灵珠：灵力已满时吸收换到的修为倍率")
+                .defineInRange("beadAbsorbBonusLiang", 1.5D, 0.0D, 1000.0D);
+        BEAD_ABSORB_BONUS_YOU = BUILDER.comment("优品灵珠：灵力已满时吸收换到的修为倍率")
+                .defineInRange("beadAbsorbBonusYou", 2.0D, 0.0D, 1000.0D);
+        BEAD_ABSORB_BONUS_SHANG = BUILDER.comment("上品灵珠：灵力已满时吸收换到的修为倍率")
+                .defineInRange("beadAbsorbBonusShang", 3.5D, 0.0D, 1000.0D);
+        BEAD_ABSORB_BONUS_JI = BUILDER.comment("极品灵珠：灵力已满时吸收换到的修为倍率。",
+                        "默认 6.0 —— 一颗极品珠顶 6 颗凡品珠，2026-10-11 用户口径「极品给的修为可以多一点」。")
+                .defineInRange("beadAbsorbBonusJi", 6.0D, 0.0D, 1000.0D);
 
         BUILDER.pop();
 
@@ -679,6 +705,27 @@ public final class Config {
             case JI: return CULTIVATION_BONUS_JI.get();
             case FAN:
             default: return CULTIVATION_BONUS_FAN.get();
+        }
+    }
+
+    /**
+     * 灵力已满时吸收某品质灵珠能换到的修为倍率。
+     *
+     * <p>2026-10-11 用户口径「吸收极品灵珠时给的修为可以多一点」：这条曲线比
+     * {@link #cultivationBonus} 更陡（极品 6 倍 vs 3 倍），且<b>不与它相乘</b>——
+     * 喂修为只看珠子本身多稀有，不看玩家自己的武灵是用什么品质开的。
+     */
+    public static double beadAbsorbBonus(SpiritQuality quality) {
+        if (quality == null) {
+            return 1.0D;
+        }
+        switch (quality) {
+            case LIANG: return BEAD_ABSORB_BONUS_LIANG.get();
+            case YOU: return BEAD_ABSORB_BONUS_YOU.get();
+            case SHANG: return BEAD_ABSORB_BONUS_SHANG.get();
+            case JI: return BEAD_ABSORB_BONUS_JI.get();
+            case FAN:
+            default: return BEAD_ABSORB_BONUS_FAN.get();
         }
     }
 

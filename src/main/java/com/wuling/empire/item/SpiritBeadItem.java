@@ -169,8 +169,13 @@ public class SpiritBeadItem extends Item {
      * 灵力已满时的吸收：不涨灵力，改成累积<b>少量修炼进度</b>。
      *
      * <p>2026-10-01 用户口径「在灵力满时吸收灵珠可小幅度增加修为」。
-     * 进度量 = {@code Config.BEAD_FULL_PROGRESS} × 该灵珠品质的修炼倍率
-     * （品质越高越划算），乘倍率的那一下在 {@code WuLingData#addProgress} 里做。
+     * 进度量 = {@code Config.BEAD_FULL_PROGRESS} × 该灵珠品质的<b>吸珠倍率</b>
+     * （{@link Config#beadAbsorbBonus}：凡 1 / 良 1.5 / 优 2 / 上 3.5 / <b>极 6</b>）。
+     *
+     * <p>2026-10-11 用户口径「吸收极品灵珠时给的修为可以多一点」：这条曲线做得比
+     * 修炼速度倍率更陡，而且<b>不</b>再乘修炼速度倍率 —— 喂修为看的是珠子本身多稀有，
+     * 与玩家自己用什么品质开启的武灵无关（走 {@link com.wuling.empire.wuling.WuLingData#addProgressRaw}
+     * 而不是 {@code addProgress}）。
      *
      * <p>只有<b>已开启武灵</b>的玩家才换得到修为；没开武灵的人吸满灵力的珠子
      * 依然会被拒绝（免得白费珠子）。这条路对任何武灵种类都算数 ——
@@ -179,14 +184,14 @@ public class SpiritBeadItem extends Item {
     private InteractionResultHolder<ItemStack> absorbIntoProgress(Level level, Player player,
                                                                   ItemStack held) {
         var holder = player.getCapability(ModCapabilities.WU_LING).orElse(null);
-        double gain = Config.BEAD_FULL_PROGRESS.get();
+        double gain = Config.BEAD_FULL_PROGRESS.get() * Config.beadAbsorbBonus(quality);
         if (holder == null || !holder.data().isBound() || gain <= 0.0D) {
             player.sendSystemMessage(Component.translatable("message.wulingdiguo.spirit_full"));
             return InteractionResultHolder.fail(held);
         }
 
         var data = holder.data();
-        boolean promoted = data.addProgress(gain);
+        boolean promoted = data.addProgressRaw(gain);
 
         Component beadName = held.getHoverName();
         held.shrink(1);
@@ -197,7 +202,7 @@ public class SpiritBeadItem extends Item {
 
         player.sendSystemMessage(Component.translatable(
                 "message.wulingdiguo.bead_full_cultivation",
-                beadName, trim(gain * data.cultivationBonus())));
+                beadName, trim(gain)));
 
         if (promoted) {
             player.sendSystemMessage(Component.translatable("message.wulingdiguo.stage_up",
@@ -224,6 +229,9 @@ public class SpiritBeadItem extends Item {
         // 2026-09-27 起品质只影响修炼速度，不影响能修到多高（上限所有人一致）
         tooltip.add(Component.translatable("tooltip.wulingdiguo.bead_cultivation",
                 trim(Config.cultivationBonus(quality))));
+        // 灵力已满时吸珠换到的修为（按珠子品质给，极品最划算）
+        tooltip.add(Component.translatable("tooltip.wulingdiguo.bead_full_progress",
+                trim(Config.BEAD_FULL_PROGRESS.get() * Config.beadAbsorbBonus(quality))));
         tooltip.add(Component.translatable("tooltip.wulingdiguo.bead_usage"));
         // 生存玩家开启武灵的唯一入口：请村民牧师抽取
         tooltip.add(Component.translatable("tooltip.wulingdiguo.bead_cleric"));
