@@ -154,6 +154,17 @@ public final class Config {
     public static final ForgeConfigSpec.DoubleValue CONDENSE_SPIRIT_COST;
 
     /**
+     * 武灵每高<b>一个大境界</b>，凝聚消耗少掉的比例。
+     *
+     * <p>2026-10-11 用户口径「武灵等级越高，凝聚物品的灵力消耗越少」。
+     * 默认 0.10 = 每个大境界 −10%：木 25 → 石 22.5 → … → 绿宝石 10。
+     */
+    public static final ForgeConfigSpec.DoubleValue CONDENSE_COST_REALM_STEP;
+
+    /** 折扣的下限系数（防止把 step 调大后消耗变成负数，等于白送） */
+    public static final ForgeConfigSpec.DoubleValue CONDENSE_COST_MIN_FACTOR;
+
+    /**
      * 自选附魔书的消耗规则（2026-10-02 用户口径：
      * 「附魔书凝聚等级越高，附魔书越稀有消耗越大」）。
      *
@@ -428,8 +439,18 @@ public final class Config {
                 .define("breakthroughConsumesSpirit", false);
 
         CONDENSE_SPIRIT_COST = BUILDER.comment("凝聚一次实体武灵消耗的灵力（百分制，100 = 灵力上限）。" +
-                        "灵力不足则无法凝聚；设为 0 表示免费。")
+                        "灵力不足则无法凝聚；设为 0 表示免费。",
+                        "这是「木境界」的基准值，境界越高会打折，见 condenseCostRealmStep。")
                 .defineInRange("condenseSpiritCost", 25.0D, 0.0D, 1000.0D);
+
+        CONDENSE_COST_REALM_STEP = BUILDER.comment("武灵每高一个大境界，凝聚少掉的灵力比例。",
+                        "默认 0.10 = 每个大境界 −10%：木 25 / 石 22.5 / 黄金 20 / 玄铁 17.5 /",
+                        "钻石 15 / 下界合金 12.5 / 绿宝石 10。设为 0 即关闭（各境界一个价）。")
+                .defineInRange("condenseCostRealmStep", 0.10D, 0.0D, 1.0D);
+
+        CONDENSE_COST_MIN_FACTOR = BUILDER.comment("凝聚消耗折到最低不会低于基准值的这个比例。",
+                        "默认 0.25 —— 把 step 调得很大时不至于把消耗算成 0（白送）。")
+                .defineInRange("condenseCostMinFactor", 0.25D, 0.0D, 1.0D);
 
         MANIFEST_ATTACK_BONUS = BUILDER.comment("凝聚出的武灵比原版同款多出的攻击力，" +
                         "按原版该物品的攻击力百分比计算（100 = 追加 100%，0 = 与原版一致）。" +
@@ -713,6 +734,24 @@ public final class Config {
     /** 灵力上限 */
     public static float maxSpirit() {
         return (float) (double) MAX_SPIRIT.get();
+    }
+
+    /**
+     * 某大境界下的凝聚折扣系数（1 = 不打折）。
+     *
+     * <p>2026-10-11 用户口径「武灵等级越高，凝聚物品的灵力消耗越少」：
+     * 系数 = 1 − {@code condenseCostRealmStep} × 大境界序号，夹在
+     * [{@code condenseCostMinFactor}, 1] 之间。
+     */
+    public static double condenseCostFactor(int realmOrdinal) {
+        double factor = 1.0D - CONDENSE_COST_REALM_STEP.get() * Math.max(0, realmOrdinal);
+        double floor = Math.min(1.0D, Math.max(0.0D, CONDENSE_COST_MIN_FACTOR.get()));
+        return Math.max(floor, Math.min(1.0D, factor));
+    }
+
+    /** 某大境界下凝聚一次要多少灵力（基准值 × 境界折扣） */
+    public static double condenseCost(int realmOrdinal) {
+        return CONDENSE_SPIRIT_COST.get() * condenseCostFactor(realmOrdinal);
     }
 
     /**

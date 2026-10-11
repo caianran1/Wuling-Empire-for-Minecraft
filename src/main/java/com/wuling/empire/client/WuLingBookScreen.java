@@ -70,9 +70,12 @@ public class WuLingBookScreen extends Screen {
             return Component.translatable(ench.getDescriptionId());
         }
 
-        /** 当前等级要消耗的灵力；附魔越稀有、等级越高越贵（见 {@link BookCost}） */
+        /**
+         * 当前等级要消耗的灵力；附魔越稀有、等级越高越贵，境界越高越省
+         * （见 {@link BookCost} 与 ClientWuLingData#realmOrdinal()）
+         */
         float cost() {
-            return BookCost.of(ench, level);
+            return BookCost.of(ench, level, ClientWuLingData.realmOrdinal());
         }
 
         String sortKey() {

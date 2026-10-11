@@ -221,6 +221,9 @@ public final class WuLingBinding {
      * 0.2.14 起的两条新口径：
      *   - <b>不需要武灵绑定器</b>（绑定器只用于「选择种类」，绑定完成后再也不依赖它）；
      *   - <b>消耗灵力</b>（Config#CONDENSE_SPIRIT_COST），灵力不足就无法凝聚。
+     *
+     * <p>2026-10-11 追加：消耗随<b>大境界</b>递减（Config#condenseCost），
+     * 武灵等级越高，凝聚同一件东西越省灵力。
      */
     public static void condense(Player player) {
         condense(player, false);
@@ -231,12 +234,14 @@ public final class WuLingBinding {
      */
     public static void condense(Player player, boolean free) {
         player.getCapability(ModCapabilities.WU_LING).ifPresent(holder -> {
-            if (!holder.data().isBound()) {
+            WuLingData data = holder.data();
+            if (!data.isBound()) {
                 player.sendSystemMessage(Component.translatable("message.wulingdiguo.condense_need_bind"));
                 return;
             }
 
-            float cost = free ? 0.0F : (float) (double) Config.CONDENSE_SPIRIT_COST.get();
+            // 境界越高越省灵力（2026-10-11 用户口径）：默认每个大境界 −10%，绿宝石期只要基准的 40%
+            float cost = free ? 0.0F : (float) Config.condenseCost(data.realmOrdinal());
             ISpiritPower spirit = player.getCapability(ModCapabilities.SPIRIT_POWER).orElse(null);
             if (!free) {
                 if (spirit == null) {
@@ -248,8 +253,6 @@ public final class WuLingBinding {
                     return;
                 }
             }
-
-            WuLingData data = holder.data();
 
             // 腐肉武灵是召唤类（2026-10-02）：不产物品，改成一队僵尸随从
             if (data.type().isSummoner()) {
@@ -376,7 +379,7 @@ public final class WuLingBinding {
             }
             int lvl = Math.max(1, Math.min(level, enchantment.getMaxLevel()));
 
-            float cost = BookCost.of(enchantment, lvl);
+            float cost = BookCost.of(enchantment, lvl, data.realmOrdinal());
             ISpiritPower spirit = player.getCapability(ModCapabilities.SPIRIT_POWER).orElse(null);
             if (spirit == null) {
                 return;
