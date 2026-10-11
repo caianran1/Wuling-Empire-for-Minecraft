@@ -131,6 +131,10 @@ public final class BuildingSystem {
 
     /** 把一个方块排进「延迟后坠落」队列 */
     public static void schedule(ServerLevel level, BlockPos pos) {
+        // 固定过的方块永远不进队列 —— 这是它豁免坠落的唯一入口，挡在这里最省事
+        if (BuildingSavedData.get(level).isPinned(pos)) {
+            return;
+        }
         int delay = Math.max(0, Config.BUILDING_DELAY_TICKS.get());
         pending(level.dimension()).put(pos.asLong(), level.getGameTime() + delay);
     }
@@ -141,13 +145,24 @@ public final class BuildingSystem {
         return map != null && map.containsKey(pos.asLong());
     }
 
-    /** 取消倒计时（粘液球固定）。返回是否真的取消了 —— 没在倒计时里就不该消耗粘液球 */
-    public static boolean cancel(ServerLevel level, BlockPos pos) {
+    /**
+     * 粘液球固定：取消倒计时，并把这一笔记进台账 —— <b>从此永久不再坠落</b>。
+     *
+     * <p>固定不能只是「这次不倒」。方块放好、倒计时也过了，之后下方支撑被挖掉时，
+     * 持续判定（{@link #onBlockRemoved} → {@link #scheduleChainUp}）会重新把它排进队列，
+     * 于是「固定过的方块还是掉」—— 用户 2026-10-11 报的就是这个。所以固定必须落盘成状态，
+     * 而不是一次性的取消。
+     *
+     * <p>只有<b>正在倒计时</b>的方块才受理（返回 {@code true}），否则手持粘液球点任何方块
+     * 都会白吃一颗。
+     */
+    public static boolean pin(ServerLevel level, BlockPos pos) {
         Long2LongMap map = PENDING.get(level.dimension());
         if (map == null || !map.containsKey(pos.asLong())) {
             return false;
         }
         map.remove(pos.asLong());
+        BuildingSavedData.get(level).pin(pos);
         return true;
     }
 
@@ -179,6 +194,8 @@ public final class BuildingSystem {
      * 从 {@code from} 的正上方开始，把一整串「玩家放的、还没有支撑」的方块都排进队列。
      *
      * <p>遇到空气 / 非玩家放置 / 依附型方块就停 —— 三者都说明这一串到这里断了。
+     * 碰到<b>被固定过的方块</b>也停：它照样站在那儿撑着上面，上面那串没有悬空，
+     * 而且它自己以后也不会掉（{@link #pin}）。
      * 同一个到期时刻，所以整根柱子会一起开始落，而不是从上往下一格一格地掉。
      */
     private static void scheduleChainUp(ServerLevel level, BlockPos from) {
@@ -186,7 +203,8 @@ public final class BuildingSystem {
         BlockPos pos = from.above();
         for (int i = 0; i < CHAIN_LIMIT && level.isLoaded(pos); i++) {
             BlockState state = level.getBlockState(pos);
-            if (state.isAir() || !data.isManaged(pos) || !qualifies(level, pos, state)) {
+            if (state.isAir() || !data.isManaged(pos) || !qualifies(level, pos, state)
+                    || data.isPinned(pos)) {
                 return;
             }
             schedule(level, pos);
@@ -242,8 +260,13 @@ public final class BuildingSystem {
 
     /** 倒计时到点：还悬空就落，已经有支撑（玩家补了方块）就不再管它 */
     private static void resolve(ServerLevel level, BlockPos pos) {
+        BuildingSavedData data = BuildingSavedData.get(level);
         // 期间被别的途径（活塞 / 指令 / 其它模组）换成了非玩家放置的方块 → 不再受理
-        if (!BuildingSavedData.get(level).isManaged(pos)) {
+        if (!data.isManaged(pos)) {
+            return;
+        }
+        // 固定过的方块不倒（正常进不来，队列是内存态，防的是边界情况）
+        if (data.isPinned(pos)) {
             return;
         }
         BlockState state = level.getBlockState(pos);

@@ -32,7 +32,7 @@ import java.util.UUID;
  *   <tr><td>放置方块</td><td>{@link BlockEvent.EntityPlaceEvent}</td><td>登记台账；底下没支撑就开始倒计时</td></tr>
  *   <tr><td>挖掉方块</td><td>{@link BlockEvent.BreakEvent}</td><td>台账划掉自己，让上方那串重新倒计时（持续判定）</td></tr>
  *   <tr><td>爆炸</td><td>{@link ExplosionEvent.Detonate}</td><td>同上，逐个处理被炸掉的方块</td></tr>
- *   <tr><td>粘液球右键</td><td>{@link PlayerInteractEvent.RightClickBlock}</td><td>固定正在倒计时的那格</td></tr>
+ *   <tr><td>粘液球右键</td><td>{@link PlayerInteractEvent.RightClickBlock}</td><td>把正在倒计时的那格钉死（永久豁免，落盘）</td></tr>
  *   <tr><td>逐 tick</td><td>{@link TickEvent.LevelTickEvent}</td><td>推进倒计时、坠落、冒提示粒子</td></tr>
  * </table>
  *
@@ -115,8 +115,9 @@ public final class BuildingEvents {
             return;
         }
         BlockPos pos = event.getPos();
-        // 只有正在倒计时的那格才受理 —— 否则手持粘液球点任何方块都会「吃」掉一颗
-        if (!BuildingSystem.cancel(level, pos)) {
+        // 只有正在倒计时的那格才受理 —— 否则手持粘液球点任何方块都会「吃」掉一颗。
+        // 固定是永久状态（写进台账），不是「这次不倒」：之后底下的方块被挖掉也不会再落。
+        if (!BuildingSystem.pin(level, pos)) {
             return;
         }
         if (Config.BUILDING_SLIME_CONSUMED.get() && !player.isCreative()) {
