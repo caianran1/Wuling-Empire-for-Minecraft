@@ -6,18 +6,12 @@ import com.wuling.empire.entity.ModEntities;
 import com.wuling.empire.events.ModEvents;
 import com.wuling.empire.item.ManifestItems;
 import com.wuling.empire.item.ModItems;
+import com.wuling.empire.item.ModTabs;
 import com.wuling.empire.item.RedstoneItems;
-import com.wuling.empire.item.SpiritQuality;
 import com.wuling.empire.network.ModMessages;
-import com.wuling.empire.wuling.WuLingRealm;
-import com.wuling.empire.wuling.WuLingType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -58,6 +52,8 @@ public class WulingEmpire {
         ManifestItems.ITEMS.register(modBus);
         // 红石装备（红石锭 + 红石战铠八件，充能类）
         RedstoneItems.ITEMS.register(modBus);
+        // 本模组专属的创造模式物品栏
+        ModTabs.TABS.register(modBus);
         ModEntities.ENTITY_TYPES.register(modBus);
 
         // 能力（Capability）注册：必须在值被获取之前完成
@@ -68,8 +64,7 @@ public class WulingEmpire {
         // 这里不要再 addListener 一次，否则 onCommonSetup 会被调用两次，
         // 导致 newSimpleChannel 抛 "Channel already registered"。
 
-        // 创造模式物品栏
-        modBus.addListener(this::buildCreativeTab);
+        // 创造模式物品栏的内容在 ModTabs#MAIN 里一次性给全，不再往原版标签页里塞
 
         // 配置文件
         // 用 ModLoadingContext（而不是 FMLJavaModLoadingContext#registerConfig）：
@@ -91,44 +86,6 @@ public class WulingEmpire {
     private void onConfigLoaded(net.minecraftforge.fml.event.config.ModConfigEvent event) {
         if (event.getConfig().getType() == ModConfig.Type.COMMON) {
             Config.logEffectiveRequirements();
-        }
-    }
-
-    private void buildCreativeTab(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-            for (SpiritQuality quality : SpiritQuality.values()) {
-                event.accept(new ItemStack(ModItems.BEADS.get(quality).get()));
-            }
-            // 原文设定：武灵绑定器仅限创造模式取得
-            event.accept(new ItemStack(ModItems.WU_LING_BINDER.get()));
-            // 创造武灵绑定器：创造模式切换武灵用
-            event.accept(new ItemStack(ModItems.CREATIVE_WU_LING_BINDER.get()));
-            // 红石锭：正常途径靠 9 个武灵红石粉合成
-            event.accept(new ItemStack(RedstoneItems.REDSTONE_INGOT.get()));
-        }
-        // 绿宝石武灵装备：正常途径靠「凝聚武灵」得到，这里放一份仅供创造模式试外观
-        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
-            event.accept(new ItemStack(ManifestItems.single(WuLingRealm.EMERALD, WuLingType.SWORD)));
-            // 护甲是整套四件，按原版顺序 头 → 胸 → 腿 → 靴 摆
-            event.accept(new ItemStack(ManifestItems.armor(WuLingRealm.EMERALD, ArmorItem.Type.HELMET)));
-            event.accept(new ItemStack(ManifestItems.armor(WuLingRealm.EMERALD, ArmorItem.Type.CHESTPLATE)));
-            event.accept(new ItemStack(ManifestItems.armor(WuLingRealm.EMERALD, ArmorItem.Type.LEGGINGS)));
-            event.accept(new ItemStack(ManifestItems.armor(WuLingRealm.EMERALD, ArmorItem.Type.BOOTS)));
-        }
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(new ItemStack(ManifestItems.single(WuLingRealm.EMERALD, WuLingType.AXE)));
-            event.accept(new ItemStack(ManifestItems.single(WuLingRealm.EMERALD, WuLingType.PICKAXE)));
-            event.accept(new ItemStack(ManifestItems.single(WuLingRealm.EMERALD, WuLingType.SHOVEL)));
-            // 红石工具四件（正常途径靠红石锭合成）
-            for (var tool : RedstoneItems.TOOLS) {
-                event.accept(new ItemStack(tool.get()));
-            }
-        }
-        // 红石战铠护甲四件
-        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
-            for (var piece : RedstoneItems.ARMOR) {
-                event.accept(new ItemStack(piece.get()));
-            }
         }
     }
 

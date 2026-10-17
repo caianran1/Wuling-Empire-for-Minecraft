@@ -147,6 +147,70 @@ public final class ManifestItems {
         return pieces[index].get();
     }
 
+    /**
+     * 反查：这件物品属于哪个大境界；不是凝聚物则返回 {@code null}。
+     *
+     * <p>给「合成出绿宝石装备」那条事件用 —— 合成表里拿到的只是物品本身，
+     * 没有 NBT 标记，必须靠注册表反查才知道它是哪一档的凝聚物。
+     */
+    public static WuLingRealm realmOf(Item item) {
+        if (item == null) {
+            return null;
+        }
+        for (Map.Entry<WuLingRealm, EnumMap<WuLingType, RegistryObject<Item>>> entry : SINGLE.entrySet()) {
+            for (RegistryObject<Item> registered : entry.getValue().values()) {
+                if (registered.get() == item) {
+                    return entry.getKey();
+                }
+            }
+        }
+        for (Map.Entry<WuLingRealm, RegistryObject<Item>[]> entry : ARMOR.entrySet()) {
+            for (RegistryObject<Item> registered : entry.getValue()) {
+                if (registered.get() == item) {
+                    return entry.getKey();
+                }
+            }
+        }
+        return null;
+    }
+
+    /** 反查：这件物品对应哪种武灵；护甲返回 {@link WuLingType#ARMOR}，不是凝聚物返回 {@code null} */
+    public static WuLingType typeOf(Item item) {
+        if (item == null) {
+            return null;
+        }
+        for (EnumMap<WuLingType, RegistryObject<Item>> byType : SINGLE.values()) {
+            for (Map.Entry<WuLingType, RegistryObject<Item>> entry : byType.entrySet()) {
+                if (entry.getValue().get() == item) {
+                    return entry.getKey();
+                }
+            }
+        }
+        for (RegistryObject<Item>[] pieces : ARMOR.values()) {
+            for (RegistryObject<Item> registered : pieces) {
+                if (registered.get() == item) {
+                    return WuLingType.ARMOR;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** 反查：护甲部位 0 头 / 1 胸 / 2 腿 / 3 靴；非护甲或不是凝聚物返回 -1 */
+    public static int armorPartOf(Item item) {
+        if (item == null) {
+            return -1;
+        }
+        for (RegistryObject<Item>[] pieces : ARMOR.values()) {
+            for (int i = 0; i < pieces.length; i++) {
+                if (pieces[i].get() == item) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
     /** ArmorItem.Type → 0 头 / 1 胸 / 2 腿 / 3 靴 */
     public static int armorIndex(ArmorItem.Type type) {
         return switch (type) {

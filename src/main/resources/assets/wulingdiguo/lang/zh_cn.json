@@ -140,6 +140,7 @@
   "wuling.panel.cultivation": "§7修炼速度：§a×%1$s§7（上限人人相同）",
   "tooltip.wulingdiguo.bead_cultivation": "§7修炼速度：§a×%1$s§7（品质只管快慢，上限人人相同）",
   "tooltip.wulingdiguo.bead_full_progress": "§7灵力已满时吸收：转化为 §6+%1$s§7 修为（品质越高越划算）",
+  "itemGroup.wulingdiguo.main": "武灵帝国",
   "item.wulingdiguo.redstone_ingot": "红石锭",
   "item.wulingdiguo.redstone_helmet": "红石头盔",
   "item.wulingdiguo.redstone_chestplate": "红石胸甲",
