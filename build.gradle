@@ -5,21 +5,21 @@ plugins {
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
 }
 
-// ── 产物命名（0.2.27 起；0.3.0 加测试版后缀）─────────────────────────
-//   正式版：Wuling-Empire-v<mod_version>.jar        例 Wuling-Empire-v0.3.0.jar
-//   测试版：Wuling-Empire-v<mod_version>-<后缀>.jar  例 Wuling-Empire-v0.3.0-test.jar
-// 后缀取自 gradle.properties 的 mod_suffix：留空 = 正式版。
+// ── 产物命名（0.2.27 起；0.3.0 加测试版后缀；2026-10-17 改小写 + beta 标识）──
+//   产物：wuling-empire-v<mod_version>-beta.jar         例 wuling-empire-v0.4.3-beta.jar
+//   测试版：wuling-empire-v<mod_version>-beta-<后缀>.jar
+// 后缀取自 gradle.properties 的 mod_suffix：留空 = 只有 -beta。
 // 临时覆盖（不改文件）：gradle build -Pmod_suffix=test
-// 做法：archivesName 给品牌名，version 加 'v' 前缀 —— 两者都从 base 派生，
+// 做法：archivesName 给小写品牌名，version 加 'v' 前缀与 -beta 标识 —— 两者都从 base 派生，
 // 所以 jar / reobfJar / sourcesJar 得到的是同一个名字，不会出现两份产物。
 // 注意：这只影响「文件名」，与 mod_id（wulingdiguo）、mods.toml 里的 version
 // 字段都无关；游戏内显示依旧是 WuLing Empire / 武灵帝国 + mod_version。
 def modSuffix = (findProperty('mod_suffix') ?: '').toString().trim()
-version = "v${mod_version}" + (modSuffix ? "-${modSuffix}" : '')
+version = "v${mod_version}-beta" + (modSuffix ? "-${modSuffix}" : '')
 group = mod_group_id
 
 base {
-    archivesName = 'Wuling-Empire'
+    archivesName = 'wuling-empire'
 }
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.

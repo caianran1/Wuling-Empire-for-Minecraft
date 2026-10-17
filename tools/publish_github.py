@@ -14,11 +14,11 @@ WuLing Empire — GitHub 发布工具（走 REST API，不依赖 git push）
     python tools/publish_github.py status              # 只看本地与远程的差异
     python tools/publish_github.py sync                # 把源码变化提交并推送到 main
     python tools/publish_github.py sync -m "说明"      # 自定义提交信息
-    python tools/publish_github.py release 0.3.0       # 正式版：tag v0.3.0 + 上传 Wuling-Empire-v0.3.0.jar
+    python tools/publish_github.py release 0.3.0       # 正式版：tag v0.3.0 + 上传 wuling-empire-v0.3.0-beta.jar
     python tools/publish_github.py release 0.3.1-test  # 测试版：tag v0.3.1-test + 上传对应 jar
     python tools/publish_github.py sync --release      # 同步源码后再发布 jar
 
-    产物路径按 `Wuling-Empire-<tag>.jar` 拼（tag 含后缀就自动带后缀）；
+    产物路径按 `wuling-empire-<tag>-beta.jar` 拼（找不到就退到 `wuling-empire-<tag>*.jar`）；
     要用别的文件名再加 `--jar <路径>`，追加说明用 `-n "..."`。
 
 设计要点：
@@ -34,6 +34,7 @@ WuLing Empire — GitHub 发布工具（走 REST API，不依赖 git push）
 """
 
 import base64
+import glob
 import json
 import os
 import re
@@ -305,8 +306,20 @@ def cmd_release(version, notes=None, jar=None):
     version = version.lstrip('v')
     tag = 'v' + version
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    jar = jar or os.path.join(root, 'build', 'libs', f'Wuling-Empire-{tag}.jar')
-    if not os.path.isfile(jar):
+    if not jar:
+        # 2026-10-17 起产物名改为 wuling-empire-v<版本>-beta.jar；
+        # 找不到就退回同名 glob（兼容带 test 后缀的测试构建与旧命名）。
+        libs = os.path.join(root, 'build', 'libs')
+        jar = os.path.join(libs, f'wuling-empire-{tag}-beta.jar')
+        if not os.path.isfile(jar):
+            hits = sorted(glob.glob(os.path.join(libs, f'wuling-empire-{tag}*.jar')))
+            if hits:
+                jar = hits[-1]
+            else:
+                legacy = os.path.join(libs, f'Wuling-Empire-{tag}.jar')
+                if os.path.isfile(legacy):
+                    jar = legacy
+    if not jar or not os.path.isfile(jar):
         sys.exit(f'[x] 找不到产物：{jar}（先构建，或显式指定 --jar）')
     size = os.path.getsize(jar)
     print(f'产物 {os.path.basename(jar)}  {size:,} B')

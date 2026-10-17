@@ -4,7 +4,7 @@
 
 ## 下载
 
-见 [**Releases**](https://github.com/caianran1/Wuling-Empire-for-Minecraft/releases/latest)，下载 jar 放进 `.minecraft/mods/` 即可。
+见 [**Releases**](https://github.com/caianran1/Wuling-Empire-for-Minecraft/releases/latest)，下载 jar（形如 `wuling-empire-v0.4.3-beta.jar`）放进 `.minecraft/mods/` 即可。
 
 ## 环境要求
 
